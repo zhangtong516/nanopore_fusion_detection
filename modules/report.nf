@@ -1,8 +1,8 @@
 process MAKE_REPORT {
     tag "Summary of fusion detection"
-    storeDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
+    storeDir "${params.outdir}/${sample}" 
     input:
-    tuple val(sample), path jaffal_dir
+    tuple val(sample), path (jaffal_dir)
     output:
     path "${sample}_report.html"
     script:

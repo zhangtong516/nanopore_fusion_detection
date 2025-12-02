@@ -2,9 +2,9 @@ process RUN_JAFFAL {
     tag "Run JAFFA for fusion"
     storeDir "${params.outdir}/${sample}/"
     input:
-    tuple val(sample), path fastq
+    tuple val(sample), file(fastq)
     output:
-    tuple val(sample), dir "${sample}_jaffa"
+    tuple val(sample), dir("${sample}_jaffa") 
     script:
     """
     set -euo pipefail
