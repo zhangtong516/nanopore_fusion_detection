@@ -8,7 +8,7 @@ process BASECALL_DORADO {
     container 'ontresearch/dorado:latest'
     script:
     """
-    bn=$(basename "${pod5_dir}")
+    bn=`basename "${pod5_dir}"`
     dorado basecaller --device ${params.dorado_device} ${params.dorado_model} ${pod5_dir} | gzip -c > ${sample}.${bn}.fastq.gz
     """
 }
