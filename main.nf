@@ -2,15 +2,16 @@ nextflow.enable.dsl=2
 
 params.samplesheet = params.samplesheet ?: ''
 params.outdir = params.outdir ?: 'results'
-params.dorado_model = params.dorado_model ?: ''
+params.dorado_model = params.dorado_model ?: 'sup'
 params.dorado_device = params.dorado_device ?: 'gpu'
 params.jaffa_ref_dir = params.jaffa_ref_dir ?: ''
 params.jaffa_sif = params.jaffa_sif ?: ''
 
-include { BASECALL_DORADO } from './modules/dorado.nf'
-include { MERGE_FASTQ } from './modules/merge_fastq.nf'
-include { RUN_JAFFAL } from './modules/jaffal.nf'
-include { MAKE_REPORT } from './modules/report.nf'
+include { BASECALL_DORADO } from './modules/dorado'
+include { MERGE_FASTQ } from './modules/merge_fastq'
+include { MERGE_FASTQ_FILES } from './modules/merge_fastq_files'
+include { RUN_JAFFAL } from './modules/jaffal'
+include { MAKE_REPORT } from './modules/report'
 
 Channel
     .fromPath(params.samplesheet)
@@ -19,25 +20,34 @@ Channel
     .set{ samples }
 
 workflow {
-    samples.into { samples_fastq; samples_pod5 }
-    samples_fastq = samples_fastq.filter{ sample, dir ->
-        def fq = new java.io.File(dir.toString(), 'fastq_pass')
-        fq.exists() && fq.isDirectory() && fq.listFiles()?.any{ f -> f.name ==~ /(?i).*\.fastq(\.gz)?$/ }
-    }.map{ sample, dir -> tuple(sample, file("${dir}/fastq_pass")) }
+    // group multiple rows per sample
+    grouped = samples.groupBy{ it[0] }.map{ sample, items -> tuple(sample, items.collect{ it[1] }) }
 
-    samples_pod5 = samples_pod5.filter{ sample, dir ->
-        def fq = new java.io.File(dir.toString(), 'fastq_pass')
-        def p5 = new java.io.File(dir.toString(), 'pod5')
-        def hasFastq = fq.exists() && fq.isDirectory() && fq.listFiles()?.any{ f -> f.name ==~ /(?i).*\.fastq(\.gz)?$/ }
-        def hasPod5 = p5.exists() && p5.isDirectory()
-        if (!hasFastq && !hasPod5)
-            throw new IllegalArgumentException("Sample ${sample}: neither fastq_pass nor pod5 folder found in ${dir}")
-        return !hasFastq && hasPod5
-    }.map{ sample, dir -> tuple(sample, file("${dir}/pod5")) }
+    // FASTQ directories per sample
+    fastq_dirs = grouped.map{ sample, dirs ->
+        def list = dirs.collect{ new java.io.File(it.toString(), 'fastq_pass') }
+                        .findAll{ it.exists() && it.isDirectory() && it.listFiles()?.any{ f -> f.name ==~ /(?i).*\.fastq(\.gz)?$/ } }
+        tuple(sample, list.collect{ file(it.path) })
+    }.filter{ sample, list -> list && list.size() > 0 }
 
-    basecalled = samples_pod5 | BASECALL_DORADO
-    merged_from_dir = samples_fastq | MERGE_FASTQ
-    merged_all = merged_from_dir.mix(basecalled)
-    merged_all | RUN_JAFFAL | MAKE_REPORT
+    // POD5 directories per sample
+    pod5_dirs = grouped.map{ sample, dirs ->
+        def list = dirs.collect{ new java.io.File(it.toString(), 'pod5') }
+                        .findAll{ it.exists() && it.isDirectory() }
+        tuple(sample, list.collect{ file(it.path) })
+    }.filter{ sample, list -> list && list.size() > 0 }
+
+    // Merge FASTQs within each fastq_pass directory -> partial files per sample
+    merged_fastq_parts = fastq_dirs.flatMap{ sample, list -> list.collect{ d -> tuple(sample, d) } } | MERGE_FASTQ
+
+    // Basecall POD5 directories -> partial files per sample
+    basecalled_parts = pod5_dirs.flatMap{ sample, list -> list.collect{ d -> tuple(sample, d) } } | BASECALL_DORADO
+
+    // Merge partial files per sample into a single FASTQ
+    partials = merged_fastq_parts.mix(basecalled_parts)
+    final_fastq = partials.groupBy{ it[0] }.map{ sample, items -> tuple(sample, items.collect{ it[1] }) } | MERGE_FASTQ_FILES
+
+    // Run JAFFAL and reporting
+    final_fastq | RUN_JAFFAL | MAKE_REPORT
 }
 

@@ -1,6 +1,6 @@
 process RUN_JAFFAL {
     tag { sample }
-    publishDir "${params.outdir}/${sample}/jaffal", mode: 'copy', overwrite: true
+    storeDir "${params.outdir}/${sample}/jaffal", mode: 'copy', overwrite: true
     input:
     tuple val(sample), path fastq
     output:

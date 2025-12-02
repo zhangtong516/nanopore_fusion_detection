@@ -1,6 +1,6 @@
 process MAKE_REPORT {
     tag { sample }
-    publishDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
+    storeDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
     input:
     tuple val(sample), path jaffal_dir
     output:

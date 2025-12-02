@@ -1,10 +1,10 @@
 process MERGE_FASTQ {
     tag { sample }
-    publishDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
+    storeDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
     input:
     tuple val(sample), path inpath
     output:
-    tuple val(sample), path "${sample}.fastq.gz"
+    tuple val(sample), path "*.fastq.gz"
     container 'ubuntu:22.04'
     script:
     """
@@ -16,20 +16,23 @@ process MERGE_FASTQ {
         echo "No FASTQ files found in ${inpath}" >&2
         exit 1
       fi
+      bn=$(basename "${inpath}")
+      out="${sample}.${bn}.fastq.gz"
       for f in "${files[@]}"; do
         if [[ "$f" =~ \.gz$ ]]; then
           zcat "$f"
         else
           cat "$f"
         fi
-      done | gzip -c > ${sample}.fastq.gz
+      done | gzip -c > "$out"
     else
+      bn=$(basename "${inpath}")
+      out="${sample}.${bn}.fastq.gz"
       if [[ "${inpath}" =~ \.gz$ ]]; then
-        cp "${inpath}" ${sample}.fastq.gz
+        cp "${inpath}" "$out"
       else
-        gzip -c "${inpath}" > ${sample}.fastq.gz
+        gzip -c "${inpath}" > "$out"
       fi
     fi
     """
 }
-
