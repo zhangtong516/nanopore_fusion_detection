@@ -1,6 +1,6 @@
 process MERGE_FASTQ {
     tag { sample }
-    publishDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
+    storeDir "${params.outdir}/${sample}"
     input:
     tuple val(sample), path inpath
     output:

@@ -1,6 +1,6 @@
 process MERGE_FASTQ_FILES {
     tag { sample }
-    storeDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
+    storeDir "${params.outdir}/${sample}"
     input:
     tuple val(sample), path fastqs
     output:
@@ -8,10 +8,6 @@ process MERGE_FASTQ_FILES {
     container 'ubuntu:22.04'
     script:
     """
-    set -euo pipefail
-    if [ -z "${fastqs}" ]; then echo "No FASTQ inputs" >&2; exit 1; fi
-    for f in ${fastqs}; do
-      if [[ "$f" =~ \.gz$ ]]; then zcat "$f"; else cat "$f"; fi
-    done | gzip -c > merged.fastq.gz
+    bash ${projectDir}/scripts/merge_fastq_files.sh "${sample}" ${fastqs}
     """
 }
