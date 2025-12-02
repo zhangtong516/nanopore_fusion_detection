@@ -1,13 +1,16 @@
 process MERGE_FASTQ_FILES {
-    tag "Merge all fastq files"
-    storeDir "${params.outdir}/${sample}"
+    tag { sample }
+    publishDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
     input:
-    tuple val(sample), path(fastqs)
+    tuple val(sample), path (fastqs)
     output:
-    tuple val(sample), file("${sample}_merged.fastq.gz")
-    
+    tuple val(sample), path("${sample}_merged.fastq.gz")
     script:
     """
-    bash ${projectDir}/scripts/merge_fastq_files.sh ${sample} ${fastqs}
+    set -euo pipefail
+    if [ -z "${fastqs}" ]; then echo "No FASTQ inputs" >&2; exit 1; fi
+    for f in ${fastqs}; do
+      if [[ "\$f" =~ \\.gz\$ ]]; then zcat "\$f"; else cat "\$f"; fi
+    done | gzip -c > ${sample}_merged.fastq.gz
     """
 }
