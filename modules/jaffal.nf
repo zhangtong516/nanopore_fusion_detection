@@ -4,7 +4,7 @@ process RUN_JAFFAL {
     input:
     tuple val(sample), file(fastq)
     output:
-    tuple val(sample), dir("${sample}_jaffa") 
+    tuple val(sample), path("${sample}_jaffa") 
     script:
     """
     set -euo pipefail
@@ -13,5 +13,4 @@ process RUN_JAFFAL {
     apptainer run $BREF -B ${params.jaffa_ref_dir}:/ref/  ${params.jaffa_sif} /JAFFA/JAFFAL.groovy ${fastq}
     """
 }
-
 // BREF=""; [ -n "$bind_ref" ] && BREF="-B ${bind_ref}:/ref"

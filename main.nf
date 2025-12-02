@@ -21,7 +21,7 @@ Channel
 
 workflow {
     // group multiple rows per sample
-    grouped = samples.groupBy{ it[0] }.map{ sample, items -> tuple(sample, items.collect{ it[1] }) }
+    grouped = samples.groupTuple()
 
     // FASTQ directories per sample
     fastq_dirs = grouped.map{ sample, dirs ->
@@ -30,10 +30,12 @@ workflow {
         tuple(sample, list.collect{ file(it.path) })
     }.filter{ sample, list -> list && list.size() > 0 }
 
-    // POD5 directories per sample
+    // POD5 directories per sample, but skip entirely if any fastq_pass exists
     pod5_dirs = grouped.map{ sample, dirs ->
-        def list = dirs.collect{ new java.io.File(it.toString(), 'pod5') }
-                        .findAll{ it.exists() && it.isDirectory() }
+        def hasFastq = dirs.collect{ new java.io.File(it.toString(), 'fastq_pass') }
+                           .any{ it.exists() && it.isDirectory() && it.listFiles()?.any{ f -> f.name ==~ /(?i).*\.fastq(\.gz)?$/ } }
+        def list = hasFastq ? [] : dirs.collect{ new java.io.File(it.toString(), 'pod5') }
+                                  .findAll{ it.exists() && it.isDirectory() }
         tuple(sample, list.collect{ file(it.path) })
     }.filter{ sample, list -> list && list.size() > 0 }
 
@@ -45,7 +47,7 @@ workflow {
 
     // Merge partial files per sample into a single FASTQ
     partials = merged_fastq_parts.mix(basecalled_parts)
-    final_fastq = partials.groupBy{ it[0] }.map{ sample, items -> tuple(sample, items.collect{ it[1] }) } | MERGE_FASTQ_FILES
+    final_fastq = partials.groupTuple().map{ sample, items -> tuple(sample, items.collect{ it }) } | MERGE_FASTQ_FILES
 
     // Run JAFFAL and reporting
     final_fastq | RUN_JAFFAL | MAKE_REPORT
