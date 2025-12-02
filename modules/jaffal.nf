@@ -5,11 +5,15 @@ process RUN_JAFFAL {
     tuple val(sample), path fastq
     output:
     tuple val(sample), dir "${sample}_jaffa"
-    container "${params.jaffa_sif ?: 'davidsongroup/jaffa:latest'}"
     script:
     """
+    set -euo pipefail
     mkdir -p ${sample}_jaffa
-    if [ -d "${fastq}" ]; then inputs="${fastq}/*.fastq*"; else inputs="${fastq}"; fi
-    bpipe run -d ${sample}_jaffa /JAFFA/JAFFAL.groovy ${inputs}
+    cd ${sample}_jaffa
+    img="${params.jaffa_sif ?: 'docker://davidsongroup/jaffa:latest'}"
+    bind_ref="${params.jaffa_ref_dir ?: ''}"
+    fastq_dir=$(dirname "${fastq}")
+    BREF=""; [ -n "$bind_ref" ] && BREF="-B ${bind_ref}:/ref"
+    apptainer run $BREF -B "$fastq_dir":"$fastq_dir" -B "$(pwd)":"$(pwd)" "$img" /JAFFA/JAFFAL.groovy "${fastq}"
     """
 }

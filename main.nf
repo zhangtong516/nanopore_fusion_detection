@@ -3,11 +3,12 @@ nextflow.enable.dsl=2
 params.samplesheet = params.samplesheet ?: ''
 params.outdir = params.outdir ?: 'results'
 params.dorado_model = params.dorado_model ?: ''
-params.dorado_device = params.dorado_device ?: 'cpu'
+params.dorado_device = params.dorado_device ?: 'gpu'
 params.jaffa_ref_dir = params.jaffa_ref_dir ?: ''
 params.jaffa_sif = params.jaffa_sif ?: ''
 
 include { BASECALL_DORADO } from './modules/dorado.nf'
+include { MERGE_FASTQ } from './modules/merge_fastq.nf'
 include { RUN_JAFFAL } from './modules/jaffal.nf'
 include { MAKE_REPORT } from './modules/report.nf'
 
@@ -35,7 +36,8 @@ workflow {
     }.map{ sample, dir -> tuple(sample, file("${dir}/pod5")) }
 
     basecalled = samples_pod5 | BASECALL_DORADO
-    merged_fastq = samples_fastq.mix(basecalled)
-    merged_fastq | RUN_JAFFAL | MAKE_REPORT
+    merged_from_dir = samples_fastq | MERGE_FASTQ
+    merged_all = merged_from_dir.mix(basecalled)
+    merged_all | RUN_JAFFAL | MAKE_REPORT
 }
 
