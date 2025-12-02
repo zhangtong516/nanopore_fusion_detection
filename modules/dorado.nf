@@ -1,6 +1,6 @@
 process BASECALL_DORADO {
-    tag { sample }
-    storeDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
+    tag "Basecall with Dorado"
+    storeDir "${params.outdir}/${sample}" 
     input:
     tuple val(sample), path pod5_dir
     output:

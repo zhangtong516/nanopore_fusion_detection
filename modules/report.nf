@@ -1,5 +1,5 @@
 process MAKE_REPORT {
-    tag { sample }
+    tag "Summary of fusion detection"
     storeDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
     input:
     tuple val(sample), path jaffal_dir

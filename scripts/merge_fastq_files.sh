@@ -9,5 +9,5 @@ for f in "$@"; do
 done
 for f in "${tmp_list[@]}"; do
   if [[ "$f" =~ \.gz$ ]]; then zcat "$f"; else cat "$f"; fi
-done | gzip -c > merged.fastq.gz
+done | gzip -c > ${sample}_merged.fastq.gz
 
