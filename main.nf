@@ -16,7 +16,7 @@ include { MAKE_REPORT } from './modules/report'
 Channel
     .fromPath(params.samplesheet)
     .splitCsv(header:true)
-    .map{ row -> tuple(row.sample as String, file(row.sample_dir)) }
+    .map{ row -> tuple(row.samplename as String, file(row.input_dir)) }
     .set{ samples }
 
 workflow {
@@ -50,4 +50,3 @@ workflow {
     // Run JAFFAL and reporting
     final_fastq | RUN_JAFFAL | MAKE_REPORT
 }
-

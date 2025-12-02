@@ -4,13 +4,15 @@ This Nextflow pipeline detects fusion genes from Nanopore long-read transcriptom
 
 ## Sample Sheet
 
-- CSV headers: `sample,sample_dir`
-- `sample_dir` must be a folder that may contain `fastq_pass` and/or `pod5` subfolders.
+- CSV headers: `samplename,input_dir`
+- `input_dir` must be a folder that may contain `fastq_pass` and/or `pod5` subfolders.
+- You can list multiple rows for the same `samplename` to combine multiple input folders.
 - Example:
 
 ```
-sample,sample_dir
-S1,/data/samples/S1
+samplename,input_dir
+S1,/data/samples/S1_run1
+S1,/data/samples/S1_run2
 S2,/data/samples/S2
 ```
 
