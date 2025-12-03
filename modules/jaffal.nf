@@ -1,16 +1,18 @@
 process RUN_JAFFAL {
-    tag "Run JAFFA for fusion"
-    storeDir "${params.outdir}/${sample}/"
+    tag { sample }
+    publishDir "${params.outdir}/${sample}/jaffal", mode: 'move', overwrite: true
     input:
-    tuple val(sample), file(fastq)
+    tuple val(sample), path (fastq)
     output:
-    tuple val(sample), path("${sample}_jaffa") 
+    tuple val(sample), path ("${sample}_jaffa")
     script:
     """
     set -euo pipefail
     mkdir -p ${sample}_jaffa
     cd ${sample}_jaffa
-    apptainer run $BREF -B ${params.jaffa_ref_dir}:/ref/  ${params.jaffa_sif} /JAFFA/JAFFAL.groovy ${fastq}
+    img="${params.jaffa_sif}"
+    BREF=""; [ -n "${params.jaffa_ref_dir}" ] && BREF="-B ${params.jaffa_ref_dir}:/ref/"
+    fqdir=$(dirname "${fastq}")
+    apptainer run $BREF -B "$fqdir":"$fqdir" -B "$(pwd)":"$(pwd)" "$img" /JAFFA/JAFFAL.groovy "${fastq}"
     """
 }
-// BREF=""; [ -n "$bind_ref" ] && BREF="-B ${bind_ref}:/ref"

@@ -1,16 +1,23 @@
 process MERGE_FASTQ_FILES {
     tag { sample }
-    publishDir "${params.outdir}/${sample}", mode: 'copy', overwrite: true
+    publishDir "${params.outdir}/${sample}", mode: 'symlink', overwrite: true
     input:
-    tuple val(sample), path (fastqs)
+    tuple val(sample), path(fastqs)
     output:
     tuple val(sample), path("${sample}_merged.fastq.gz")
     script:
     """
     set -euo pipefail
-    if [ -z "${fastqs}" ]; then echo "No FASTQ inputs" >&2; exit 1; fi
-    for f in ${fastqs}; do
-      if [[ "\$f" =~ \\.gz\$ ]]; then zcat "\$f"; else cat "\$f"; fi
-    done | gzip -c > ${sample}_merged.fastq.gz
+    files=( ${fastqs} )
+    if [ \${#files[@]} -eq 0 ]; then
+      echo "No FASTQ inputs" >&2
+      exit 1
+    elif [ \${#files[@]} -eq 1 ]; then
+      f="\${files[0]}"
+      cp "\$f" ${sample}_merged.fastq.gz
+    else
+      for f in "\${files[@]}"; do
+        cat "\$f"
+      done > ${sample}_merged.fastq.gz
+    fi
     """
-}
