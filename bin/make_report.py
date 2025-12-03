@@ -5,7 +5,7 @@ import html
 import argparse
 
 def build_report(sample: str, jaffal_dir: str, out_html: str):
-    final_dir = os.path.join(jaffal_dir, 'final')
+    final_dir = os.path.join(jaffal_dir)
     files = []
     if os.path.isdir(final_dir):
         for ext in ('*.txt','*.tsv','*.csv'):

@@ -1,6 +1,6 @@
 process MERGE_FASTQ_FILES {
     tag { sample }
-    publishDir "${params.outdir}/${sample}", mode: 'symlink', overwrite: true
+    publishDir "${params.outdir}/${sample}", mode: 'move', overwrite: true
     input:
     tuple val(sample), path(fastqs)
     output:
@@ -21,3 +21,4 @@ process MERGE_FASTQ_FILES {
       done > ${sample}_merged.fastq.gz
     fi
     """
+} 

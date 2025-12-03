@@ -1,6 +1,6 @@
 process MERGE_FASTQ {
     tag { sample }
-    publishDir "${params.outdir}/${sample}", mode: 'symlink', overwrite: true
+    publishDir "${params.outdir}/${sample}", mode: 'move', overwrite: true
     input:
     tuple val(sample), path(inpath)
     output:
