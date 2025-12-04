@@ -50,5 +50,6 @@ workflow {
     final_fastq = partials.groupTuple().map{ sample, items -> tuple(sample, items.collect{ it }) } | MERGE_FASTQ_FILES
 
     // Run JAFFAL and reporting
-    final_fastq | RUN_JAFFAL | MAKE_REPORT
+    final_fastq | RUN_JAFFAL 
+    //| MAKE_REPORT
 }
