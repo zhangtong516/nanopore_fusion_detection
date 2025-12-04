@@ -21,3 +21,4 @@ process MERGE_FASTQ_FILES {
       done > ${sample}_merged.fastq.gz
     fi
     """
+}
