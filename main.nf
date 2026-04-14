@@ -10,8 +10,10 @@ params.jaffa_sif = params.jaffa_sif ?: ''
 include { BASECALL_DORADO } from './modules/dorado'
 include { MERGE_FASTQ } from './modules/merge_fastq'
 include { MERGE_FASTQ_FILES } from './modules/merge_fastq_files'
+include { DORADO_ALIGNER } from './modules/dorado_aligner'
 include { RUN_JAFFAL } from './modules/jaffal'
-include { MAKE_REPORT } from './modules/report'
+include { FUSION_ANNOTATION} from './modules/fusion_annotation'
+include { FUSION_REALIGN} from './modules/fusion_realign'
 
 Channel
     .fromPath(params.samplesheet)
@@ -51,5 +53,10 @@ workflow {
 
     // Run JAFFAL and reporting
     final_fastq | RUN_JAFFAL 
-    //| MAKE_REPORT
+
+    
+    DORADO_ALIGNER(final_fastq)
+    if (params.align_ref) {
+        DORADO_ALIGNER(final_fastq, file(params.align_ref))
+    }
 }
