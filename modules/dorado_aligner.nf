@@ -4,15 +4,16 @@ process DORADO_ALIGNER {
 
     input:
     tuple val(sample), path(fastq_file) 
+    
     output:
-    tuple val(sample), path("${samplen}_aligned.bam"), emit: bam
+    tuple val(sample), path("${sample}_aligned.bam"), emit: bam
 
     script:
     """
     dorado aligner \
-        ${reference_genome} \
+        ${params.ref_genome} \
         ${fastq_file} \
-        --threads ${params.jaffa_ref_dir}/hg38.fa \
-        --mm2-opts '-x splice -k 14' > ${samplen}_aligned.bam
+        --threads ${task.cpus}\
+        --mm2-opts '-x splice -k 14' > ${sample}_aligned.bam
     """
 }
