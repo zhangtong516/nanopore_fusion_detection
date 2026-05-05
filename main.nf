@@ -6,6 +6,8 @@ params.dorado_model = params.dorado_model ?: 'sup'
 params.dorado_device = params.dorado_device ?: 'gpu'
 params.jaffa_ref_dir = params.jaffa_ref_dir ?: ''
 params.jaffa_sif = params.jaffa_sif ?: ''
+params.gtf = params.gtf ?: ''
+params.ref_genome = params.ref_genome ?: ''
 
 include { BASECALL_DORADO } from './modules/dorado'
 include { MERGE_FASTQ } from './modules/merge_fastq'
@@ -13,7 +15,7 @@ include { MERGE_FASTQ_FILES } from './modules/merge_fastq_files'
 include { DORADO_ALIGNER } from './modules/dorado_aligner'
 include { RUN_JAFFAL } from './modules/jaffal'
 include { FUSION_ANNOTATION} from './modules/fusion_annotation'
-include { FUSION_REALIGN} from './modules/fusion_realign'
+
 
 Channel
     .fromPath(params.samplesheet)
@@ -40,7 +42,7 @@ workflow {
                                   .findAll{ it.exists() && it.isDirectory() }
         tuple(sample, list.collect{ file(it.path) })
     }.filter{ sample, list -> list && list.size() > 0 }
-
+    
     // Merge FASTQs within each fastq_pass directory -> partial files per sample
     merged_fastq_parts = fastq_dirs.flatMap{ sample, list -> list.collect{ d -> tuple(sample, d) } } | MERGE_FASTQ
 
@@ -51,12 +53,15 @@ workflow {
     partials = merged_fastq_parts.mix(basecalled_parts)
     final_fastq = partials.groupTuple().map{ sample, items -> tuple(sample, items.collect{ it }) } | MERGE_FASTQ_FILES
 
+    // Align to genome with dorado aligner 
+    aligned_bam = final_fastq | DORADO_ALIGNER
     // Run JAFFAL and reporting
-    final_fastq | RUN_JAFFAL 
+    jaffa_results = final_fastq | RUN_JAFFAL 
 
+
+    // Prepare fusion sequences and annotations
+    ch_fusion_annotation = jaffa_results.join(aligned_bam).view()
+    FUSION_ANNOTATION(ch_fusion_annotation)
     
-    DORADO_ALIGNER(final_fastq)
-    if (params.align_ref) {
-        DORADO_ALIGNER(final_fastq, file(params.align_ref))
-    }
+
 }
